@@ -88,13 +88,14 @@ class SubstitutionGenerator:
         if source_chord.chord_quality != "dominant7":
             return substitutions
 
-        # Find target root (tritone away)
-        target_root = self.transpose_note(source_chord.root_note, 6)
+        # Find target semitone (tritone away - 6 semitones)
+        source_semitone = self.get_semitone(source_chord.root_note)
+        target_semitone = (source_semitone + 6) % 12
 
-        # Find matching dominant 7th chords
+        # Find matching dominant 7th chords with enharmonic equivalence
         for symbol, chord in self.chords.items():
             if (chord.chord_quality == "dominant7" and
-                self.normalize_note(chord.root_note) == target_root and
+                self.get_semitone(chord.root_note) == target_semitone and
                 chord.id != source_chord.id):
 
                 substitutions.append({
@@ -155,19 +156,21 @@ class SubstitutionGenerator:
 
         if source_chord.chord_quality == "major":
             # Find relative minor (3 semitones down)
-            target_root = self.transpose_note(source_chord.root_note, -3)
+            source_semitone = self.get_semitone(source_chord.root_note)
+            target_semitone = (source_semitone - 3) % 12
             target_quality = "minor"
 
         elif source_chord.chord_quality == "minor":
             # Find relative major (3 semitones up)
-            target_root = self.transpose_note(source_chord.root_note, 3)
+            source_semitone = self.get_semitone(source_chord.root_note)
+            target_semitone = (source_semitone + 3) % 12
             target_quality = "major"
         else:
             return substitutions
 
-        # Find matching chords
+        # Find matching chords with enharmonic equivalence
         for symbol, chord in self.chords.items():
-            if (self.normalize_note(chord.root_note) == target_root and
+            if (self.get_semitone(chord.root_note) == target_semitone and
                 chord.chord_quality == target_quality and
                 chord.id != source_chord.id):
 
@@ -198,9 +201,11 @@ class SubstitutionGenerator:
         else:
             return substitutions
 
-        # Find chords with same root but different quality
+        # Find chords with same root but different quality (with enharmonic equivalence)
+        source_semitone = self.get_semitone(source_chord.root_note)
+
         for symbol, chord in self.chords.items():
-            if (self.normalize_note(chord.root_note) == self.normalize_note(source_chord.root_note) and
+            if (self.get_semitone(chord.root_note) == source_semitone and
                 chord.chord_quality in target_qualities and
                 chord.id != source_chord.id):
 
@@ -224,25 +229,27 @@ class SubstitutionGenerator:
         """
         substitutions = []
 
+        # Calculate target semitones with enharmonic equivalence
+        source_semitone = self.get_semitone(source_chord.root_note)
         # Up a fifth (7 semitones)
-        target_up_fifth = self.transpose_note(source_chord.root_note, 7)
+        target_up_fifth_semitone = (source_semitone + 7) % 12
         # Down a fifth (5 semitones) = up a fourth
-        target_down_fifth = self.transpose_note(source_chord.root_note, 5)
+        target_down_fifth_semitone = (source_semitone + 5) % 12
 
         for symbol, chord in self.chords.items():
             if chord.id == source_chord.id:
                 continue
 
-            normalized_root = self.normalize_note(chord.root_note)
+            chord_semitone = self.get_semitone(chord.root_note)
 
-            if normalized_root == target_up_fifth or normalized_root == target_down_fifth:
+            if chord_semitone in [target_up_fifth_semitone, target_down_fifth_semitone]:
                 # Prefer same quality
                 if chord.chord_quality == source_chord.chord_quality:
                     score = 0.85
                 else:
                     score = 0.70
 
-                direction = "fifth up" if normalized_root == target_up_fifth else "fourth up"
+                direction = "fifth up" if chord_semitone == target_up_fifth_semitone else "fourth up"
 
                 substitutions.append({
                     "target_chord": chord,
@@ -264,18 +271,20 @@ class SubstitutionGenerator:
         """
         substitutions = []
 
+        # Calculate target semitones with enharmonic equivalence
+        source_semitone = self.get_semitone(source_chord.root_note)
         # Half step up
-        target_up = self.transpose_note(source_chord.root_note, 1)
+        target_up_semitone = (source_semitone + 1) % 12
         # Half step down
-        target_down = self.transpose_note(source_chord.root_note, -1)
+        target_down_semitone = (source_semitone - 1) % 12
 
         for symbol, chord in self.chords.items():
             if chord.id == source_chord.id:
                 continue
 
-            normalized_root = self.normalize_note(chord.root_note)
+            chord_semitone = self.get_semitone(chord.root_note)
 
-            if normalized_root in [target_up, target_down]:
+            if chord_semitone in [target_up_semitone, target_down_semitone]:
                 # Prefer dominant 7th for chromatic approaches
                 if chord.chord_quality == "dominant7":
                     score = 0.80
@@ -284,7 +293,7 @@ class SubstitutionGenerator:
                 else:
                     score = 0.60
 
-                direction = "semitone up" if normalized_root == target_up else "semitone down"
+                direction = "semitone up" if chord_semitone == target_up_semitone else "semitone down"
 
                 substitutions.append({
                     "target_chord": chord,
