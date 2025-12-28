@@ -62,10 +62,10 @@ services:
     image: "dpage/pgadmin4:8"
     container_name: reharmonizer-pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@reharmonizer}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-SecurePassword123}
-      - PGADMIN_CONFIG_SERVER_MODE=False
-      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_DEFAULT_EMAIL=admin@reharmonizer.com
+      - PGADMIN_DEFAULT_PASSWORD=SecurePassword123
+    ports:
+      - 5050:80
     networks:
       - reharmonizer-network
     volumes:

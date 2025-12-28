@@ -1,9 +1,12 @@
 export interface Chord {
+  id?: number;
   symbol: string;
-  rootNote: string;
+  root_note: string;
+  rootNote?: string; // Alias for compatibility
   notes: string[];
-  intervals: number[];
-  chordQuality?: string;
+  intervals: string[];
+  chord_quality?: string;
+  chordQuality?: string; // Alias for compatibility
 }
 
 export interface ChordWithExtensions extends Chord {
@@ -29,11 +32,21 @@ export interface SubstitutionOption {
   chord: string;
   technique: string;
   description: string;
-  commonUsage?: string;
+  common_usage?: string;
+  commonUsage?: string; // Alias for compatibility
   score: number;
 }
 
 export interface SubstitutionResponse {
-  originalChord: string;
+  original_chord: string;
+  originalChord?: string; // Alias for compatibility
   substitutions: SubstitutionOption[];
+}
+
+export interface ImprovisationNotesResponse {
+  chord_symbol: string;
+  chord_tones: string[];
+  scale_notes: string[];
+  recommended_notes: string[];
+  avoid_notes: string[];
 }

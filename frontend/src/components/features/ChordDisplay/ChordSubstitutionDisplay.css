@@ -1,0 +1,180 @@
+.chord-substitution-display {
+  padding: 20px;
+}
+
+.original-chord-section {
+  margin-bottom: 30px;
+}
+
+.original-chord-section h3,
+.substitutions-section h3 {
+  color: #333;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.substitution-count {
+  font-size: 14px;
+  color: #666;
+  font-weight: normal;
+}
+
+.chord-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.chord-card.original {
+  border: 3px solid #2196F3;
+}
+
+.chord-symbol-large {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.substitutions-section {
+  margin-top: 30px;
+}
+
+.no-substitutions {
+  padding: 40px;
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  color: #666;
+}
+
+.substitutions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.substitution-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.substitution-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #2196F3;
+  transform: translateY(-2px);
+}
+
+.substitution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.chord-symbol {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.technique-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.substitution-notation {
+  margin-bottom: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.substitution-info {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.description {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.common-usage {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.common-usage strong {
+  color: #333;
+}
+
+.score-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.score-label {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.score-track {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.score-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4CAF50;
+  min-width: 40px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .substitutions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chord-symbol-large {
+    font-size: 24px;
+  }
+
+  .chord-symbol {
+    font-size: 20px;
+  }
+}
