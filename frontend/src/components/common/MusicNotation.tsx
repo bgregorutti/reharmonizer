@@ -96,10 +96,14 @@ const MusicNotation: React.FC<MusicNotationProps> = ({
       // If we have notes to render
       if (vfNotes.length > 0) {
         try {
-          const voice = new Voice({ num_beats: vfNotes.length, beat_value: 4 });
+          // Create a voice without strict time signature checking
+          // This allows any number of notes to be rendered
+          const voice = new Voice({ num_beats: 4, beat_value: 4 });
+          voice.setStrict(false); // Disable strict timing checks
           voice.addTickables(vfNotes);
 
-          new Formatter().joinVoices([voice]).format([voice], width - 50);
+          // Format the voice to fit the stave width
+          new Formatter().formatToStave([voice], stave);
 
           voice.draw(context, stave);
         } catch (error) {

@@ -91,14 +91,23 @@ notes.forEach((note) => {
 
 ### 4. Voice/Formatter Error Handling
 
-Protected the Voice creation and formatting:
+Protected the Voice creation and formatting, with strict mode disabled to prevent "Too many ticks" errors:
 
 ```typescript
 if (vfNotes.length > 0) {
   try {
-    const voice = new Voice({ num_beats: vfNotes.length, beat_value: 4 });
+    // Create a voice with standard 4/4 time
+    const voice = new Voice({ num_beats: 4, beat_value: 4 });
+
+    // Disable strict timing checks to allow any number of notes
+    // This prevents "BadArgument: Too many ticks" errors
+    voice.setStrict(false);
+
     voice.addTickables(vfNotes);
-    new Formatter().joinVoices([voice]).format([voice], width - 50);
+
+    // Format the voice to fit the stave width
+    new Formatter().formatToStave([voice], stave);
+
     voice.draw(context, stave);
   } catch (error) {
     console.error('VexFlow voice/formatter error:', error);
@@ -329,12 +338,45 @@ If MusicNotation still shows errors:
    - Check package.json for VexFlow version
    - Known working version: ^4.0.0 (or latest)
 
+## Common VexFlow Errors Fixed
+
+### Error: "BadArgument: Too many ticks"
+
+**Full Error Message:**
+```
+VexFlow voice/formatter error: Error: [RuntimeError] BadArgument: Too many ticks.
+```
+
+**Root Cause:**
+VexFlow's Voice performs strict validation of note durations. When `num_beats` and `beat_value` don't exactly match the total duration of all notes, it throws this error.
+
+Example:
+- 5 quarter notes ('q') = 5 beats total
+- Voice set to `{ num_beats: 5, beat_value: 4 }` expects exactly 5 quarter notes
+- If you render 6 notes, VexFlow throws "Too many ticks"
+- If you render 4 notes, VexFlow throws "Not enough ticks"
+
+**Solution Applied:**
+Use `voice.setStrict(false)` to disable strict timing validation:
+
+```typescript
+const voice = new Voice({ num_beats: 4, beat_value: 4 });
+voice.setStrict(false); // Allow any number of notes
+voice.addTickables(vfNotes);
+new Formatter().formatToStave([voice], stave);
+```
+
+This allows rendering any number of notes without strict time signature constraints.
+
+**Fixed in:** MusicNotation.tsx:101-102
+
 ## Summary
 
 The MusicNotation component now handles errors gracefully at multiple levels:
 - Top-level rendering errors
 - Individual chord/note parsing errors
-- Voice/Formatter errors
+- Voice/Formatter errors (including "Too many ticks")
 - Input validation errors
+- Strict timing mode disabled for flexible rendering
 
 Users will see friendly error messages instead of application crashes, and developers get detailed console logs for debugging.
