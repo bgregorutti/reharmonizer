@@ -1,9 +1,16 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import computed_field, Field
 from typing import List
 
 
 class Settings(BaseSettings):
     """Application settings using Pydantic BaseSettings."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",  # Ignore extra environment variables
+    )
 
     # Database
     DATABASE_URL: str = "postgresql://reharmonizer_user:dev_password@localhost:5432/reharmonizer"
@@ -14,15 +21,20 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
 
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # CORS - stored as string, parsed to list via computed field
+    cors_origins_str: str = Field(
+        default="http://localhost:5173,http://localhost:3000",
+        validation_alias="CORS_ORIGINS"
+    )
+
+    @computed_field
+    @property
+    def CORS_ORIGINS(self) -> List[str]:
+        """Parse CORS_ORIGINS from comma-separated string."""
+        return [origin.strip() for origin in self.cors_origins_str.split(",")]
 
     # API
     API_V1_PREFIX: str = "/api/v1"
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()
