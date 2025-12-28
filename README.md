@@ -16,17 +16,25 @@ A comprehensive web application for music reharmonization, chord substitution, a
 
 ## Tech Stack
 
-- **Backend**: Python 3.11, FastAPI, music21, SQLAlchemy, PostgreSQL
+- **Core Package**: `reharmonizer-core` - UV package with music theory algorithms
+- **Backend**: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL
 - **Frontend**: React 18, TypeScript, Vite, VexFlow
 - **Database**: PostgreSQL 15
 - **Development**: Docker, docker-compose
+- **Music Theory**: music21 (via reharmonizer-core)
 
 ## Project Structure
 
 ```
 reharmonizer/
+├── reharmonizer-core/   # Core music theory package (UV package)
+│   └── src/
+│       └── reharmonizer_core/
+│           ├── substitution/     # Chord & note recommendation algorithms
+│           ├── theory/           # Music theory utilities
+│           └── music21_integration/  # Music21 wrapper
 ├── backend/              # Python/FastAPI backend
-│   ├── app/             # Application code
+│   ├── app/             # Application code (uses reharmonizer-core)
 │   ├── alembic/         # Database migrations
 │   ├── scripts/         # Utility scripts
 │   └── tests/           # Tests
@@ -84,19 +92,27 @@ python scripts/seed_database.py
 
 ## Development
 
+### Core Package
+
+The `reharmonizer-core` package contains the music theory logic:
+- **substitution/**: Chord and note recommendation algorithms
+- **theory/**: Chord analyzer, scale generator
+- **music21_integration/**: Wrapper around music21 library
+
 ### Backend
 
 The backend uses FastAPI with the following structure:
 - **models/**: SQLAlchemy ORM models
 - **schemas/**: Pydantic schemas for validation
 - **api/**: REST API endpoints
-- **services/**: Business logic layer
+- **services/**: Business logic layer (wraps reharmonizer-core)
 - **repositories/**: Data access layer
 
 API endpoints are available at `/api/v1`:
 - `/chords` - Chord operations
 - `/keys` - Key signature operations
 - `/reharmonize` - Reharmonization endpoints
+- `/improvisation/notes/{chord}` - Get improvisation notes
 
 ### Frontend
 
@@ -163,9 +179,37 @@ Once the backend is running, visit http://localhost:8000/docs for interactive AP
 
 This is a project in active development. Features are being implemented according to the roadmap above.
 
-## Music Theory Concepts
+## Music Theory Implementation
 
-The application implements several music theory concepts:
+### Current Implementation (Simple & Functional)
+
+The application currently uses a **simple random selection** approach:
+
+1. **Chord Recommendations**: Randomly select 5 chords from the database
+   - Example: For `C7`, might suggest `Db7`, `Em`, `G7`, `Am`, `Fmaj7`
+   - Provides immediate functionality with minimal complexity
+
+2. **Note Recommendations**: Extract chord tones and scale notes, randomly select 5
+   - Example: For `Cmaj7`, returns chord tones `[C, E, G, B]` and suggests notes like `D`, `G`, `A`
+   - Uses music21 to determine appropriate scales (major, minor, mixolydian, etc.)
+
+This simple implementation allows the application to work immediately while we develop more sophisticated algorithms.
+
+### Planned: Similarity Score Algorithm
+
+Future versions will use **similarity scoring** to make smarter recommendations based on:
+
+- **Shared Notes**: Chords with common notes sound more related
+- **Interval Relationships**: Similar interval structures
+- **Harmonic Function**: Tonic, subdominant, dominant relationships
+- **Voice Leading Quality**: Smooth transitions between chords
+- **Genre-Specific Rules**: Jazz vs pop vs classical preferences
+
+See [SIMILARITY_SCORE_PLAN.md](SIMILARITY_SCORE_PLAN.md) for the complete implementation plan.
+
+### Music Theory Concepts (To Be Fully Implemented)
+
+The application will implement several advanced music theory concepts:
 
 - **Tritone Substitution**: Replace V7 with bII7 (dominant chords a tritone apart)
 - **Diatonic Substitution**: Substitute chords within a key (I ↔ iii, ii ↔ IV)

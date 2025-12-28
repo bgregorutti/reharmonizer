@@ -8,14 +8,18 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy and install the core package first
+COPY reharmonizer-core /app/reharmonizer-core
+RUN pip install --no-cache-dir -e /app/reharmonizer-core
 
-# Install Python dependencies
+# Copy backend requirements (without core package since we already installed it)
+COPY backend/requirements.txt .
+
+# Install backend dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+COPY backend .
 
 # Expose port
 EXPOSE 8000

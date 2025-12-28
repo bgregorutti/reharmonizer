@@ -23,8 +23,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: ../docker/backend.Dockerfile
+      context: .
+      dockerfile: docker/backend.Dockerfile
     container_name: reharmonizer-backend
     environment:
       DATABASE_URL: postgresql://reharmonizer_user:dev_password@postgres:5432/reharmonizer
@@ -34,6 +34,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./reharmonizer-core:/app/reharmonizer-core
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,6 +57,24 @@ services:
     command: npm run dev -- --host
     networks:
       - reharmonizer-network
+  
+  pgadmin:
+    image: "dpage/pgadmin4:8"
+    container_name: reharmonizer-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@reharmonizer}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-SecurePassword123}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+    networks:
+      - reharmonizer-network
+    volumes:
+      - ./volumes/pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - admin
 
 volumes:
   postgres_data:
