@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: reharmonizer-db
+    environment:
+      POSTGRES_DB: reharmonizer
+      POSTGRES_USER: reharmonizer_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reharmonizer_user -d reharmonizer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reharmonizer-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+    container_name: reharmonizer-backend
+    environment:
+      DATABASE_URL: postgresql://reharmonizer_user:dev_password@postgres:5432/reharmonizer
+      PYTHONUNBUFFERED: "1"
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - reharmonizer-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    container_name: reharmonizer-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - reharmonizer-network
+
+volumes:
+  postgres_data:
+
+networks:
+  reharmonizer-network:
+    driver: bridge
