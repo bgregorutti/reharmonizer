@@ -3,6 +3,7 @@ from app.models.key_signature import KeySignature
 from app.models.substitution_rule import SubstitutionRule
 from app.models.reharmonization_pattern import ReharmonizationPattern
 from app.models.chord_extension import ChordExtension
+from app.models.chord_substitution import ChordSubstitution
 
 __all__ = [
     "Chord",
@@ -10,4 +11,5 @@ __all__ = [
     "SubstitutionRule",
     "ReharmonizationPattern",
     "ChordExtension",
+    "ChordSubstitution",
 ]

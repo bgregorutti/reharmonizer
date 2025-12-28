@@ -11,7 +11,7 @@ import {
 import './ChordSubstitutionView.css';
 
 type InputMode = 'key' | 'chords';
-type Technique = 'random' | 'tritone' | 'diatonic' | 'chromatic' | 'circle-of-fifths';
+type Technique = 'random' | 'tritone' | 'diatonic' | 'chromatic' | 'circle_fifths' | 'relative' | 'parallel';
 
 const ChordSubstitutionView: React.FC = () => {
   const [inputMode, setInputMode] = useState<InputMode>('chords');
@@ -70,28 +70,38 @@ const ChordSubstitutionView: React.FC = () => {
   const techniques: { value: Technique; label: string; description: string }[] = [
     {
       value: 'random',
-      label: 'Random',
-      description: 'Random selection from available chords',
-    },
-    {
-      value: 'tritone',
-      label: 'Tritone Substitution',
-      description: 'Replace with chord a tritone away',
+      label: 'All Techniques',
+      description: 'Best substitutions from all music theory techniques',
     },
     {
       value: 'diatonic',
       label: 'Diatonic',
-      description: 'Stay within the key signature',
+      description: 'Chords sharing common tones within the same key',
+    },
+    {
+      value: 'circle_fifths',
+      label: 'Circle of Fifths',
+      description: 'Chords related by fifth intervals (strong voice leading)',
+    },
+    {
+      value: 'relative',
+      label: 'Relative Major/Minor',
+      description: 'Major ↔ relative minor (same key signature)',
+    },
+    {
+      value: 'parallel',
+      label: 'Parallel Major/Minor',
+      description: 'Same root note, different quality (modal interchange)',
     },
     {
       value: 'chromatic',
       label: 'Chromatic Approach',
-      description: 'Use chromatic passing chords',
+      description: 'Approach chords a semitone away (jazz technique)',
     },
     {
-      value: 'circle-of-fifths',
-      label: 'Circle of Fifths',
-      description: 'Follow the circle of fifths progression',
+      value: 'tritone',
+      label: 'Tritone Substitution',
+      description: 'Dominant 7th chords a tritone apart (jazz technique)',
     },
   ];
 

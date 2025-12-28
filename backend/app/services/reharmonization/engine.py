@@ -4,8 +4,10 @@ Reharmonization engine - coordinates chord substitution recommendations.
 
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from reharmonizer_core import ChordRecommender, NoteRecommender
 from app.models.chord import Chord
+from app.models.chord_substitution import ChordSubstitution
 
 
 class ReharmonizationEngine:
@@ -33,7 +35,7 @@ class ReharmonizationEngine:
         count: int = 5,
     ) -> List[Dict[str, Any]]:
         """
-        Recommend chord substitutions.
+        Recommend chord substitutions using database-stored music theory relationships.
 
         Args:
             source_chord: Original chord symbol
@@ -43,43 +45,100 @@ class ReharmonizationEngine:
         Returns:
             List of chord recommendations with metadata
         """
-        # Get available chords from database
-        chords = self.db.query(Chord).all()
+        # Get the source chord from database
+        source = self.db.query(Chord).filter(Chord.symbol == source_chord).first()
 
-        # Convert to dict format for recommender
-        available_chords = [
-            {
-                "symbol": chord.symbol,
-                "root_note": chord.root_note,
-                "notes": chord.notes,
-                "intervals": chord.intervals,
-                "chord_quality": chord.chord_quality,
-            }
-            for chord in chords
-        ]
+        if not source:
+            # Fallback: source chord not found
+            return []
 
-        # Get recommendations from core package
-        recommendations = self.chord_recommender.recommend_by_technique(
-            source_chord=source_chord,
-            available_chords=available_chords,
-            technique=technique,
-            count=count,
+        # Query substitutions from database
+        query = (
+            self.db.query(ChordSubstitution, Chord)
+            .join(Chord, ChordSubstitution.target_chord_id == Chord.id)
+            .filter(ChordSubstitution.source_chord_id == source.id)
         )
 
-        # Add technique description to each recommendation
-        technique_desc = self.chord_recommender.get_technique_description(technique)
+        # Filter by technique if specified and not "random"
+        if technique and technique != "random":
+            query = query.filter(ChordSubstitution.technique == technique)
 
+        # Order by score (best substitutions first)
+        query = query.order_by(ChordSubstitution.score.desc())
+
+        # Get results
+        substitutions = query.all()
+
+        # If we have no results with the specific technique, try all techniques
+        if not substitutions and technique != "random":
+            query = (
+                self.db.query(ChordSubstitution, Chord)
+                .join(Chord, ChordSubstitution.target_chord_id == Chord.id)
+                .filter(ChordSubstitution.source_chord_id == source.id)
+                .order_by(ChordSubstitution.score.desc())
+            )
+            substitutions = query.all()
+
+        # If still no results, fallback to random selection
+        if not substitutions:
+            return self._fallback_random_substitutions(source_chord, count)
+
+        # Limit to requested count
+        substitutions = substitutions[:count]
+
+        # Format results
         result = []
-        for rec in recommendations:
+        for sub, target_chord in substitutions:
             result.append(
                 {
-                    "chord": rec["symbol"],
-                    "root_note": rec["root_note"],
-                    "notes": rec["notes"],
-                    "chord_quality": rec.get("chord_quality", "unknown"),
-                    "technique": technique,
-                    "description": technique_desc,
-                    "score": 1.0,  # Placeholder - will be replaced with similarity score
+                    "chord": target_chord.symbol,
+                    "root_note": target_chord.root_note,
+                    "notes": target_chord.notes,
+                    "chord_quality": target_chord.chord_quality,
+                    "technique": sub.technique,
+                    "description": sub.description,
+                    "score": sub.score,
+                    "usage_context": sub.usage_context,
+                    "relationship_type": sub.relationship_type,
+                }
+            )
+
+        return result
+
+    def _fallback_random_substitutions(
+        self, source_chord: str, count: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Fallback method for random substitutions when no theory-based substitutions exist.
+
+        Args:
+            source_chord: Original chord symbol
+            count: Number of recommendations
+
+        Returns:
+            List of random chord recommendations
+        """
+        # Get available chords from database
+        chords = (
+            self.db.query(Chord)
+            .filter(Chord.symbol != source_chord)
+            .order_by(func.random())
+            .limit(count)
+            .all()
+        )
+
+        # Format results
+        result = []
+        for chord in chords:
+            result.append(
+                {
+                    "chord": chord.symbol,
+                    "root_note": chord.root_note,
+                    "notes": chord.notes,
+                    "chord_quality": chord.chord_quality,
+                    "technique": "random",
+                    "description": "Random selection (no music theory relationship found)",
+                    "score": 0.5,
                 }
             )
 
