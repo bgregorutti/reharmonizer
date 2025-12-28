@@ -8,7 +8,7 @@ import {
 
 export const chordService = {
   async getChords(): Promise<Chord[]> {
-    const response = await apiClient.get('/chords');
+    const response = await apiClient.get('/chords/');
     return response.data;
   },
 
@@ -43,7 +43,7 @@ export const chordService = {
   },
 
   async getSubstitutionsWithContext(request: SubstitutionRequest): Promise<SubstitutionResponse> {
-    const response = await apiClient.post('/reharmonization/substitutions/analyze', request);
+    const response = await apiClient.post('/reharmonize/substitutions/analyze', request);
     return response.data;
   },
 
