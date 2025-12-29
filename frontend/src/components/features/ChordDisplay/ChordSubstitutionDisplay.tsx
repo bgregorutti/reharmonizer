@@ -38,13 +38,13 @@ const ChordSubstitutionDisplay: React.FC<ChordSubstitutionDisplayProps> = ({
 
   return (
     <div className="chord-substitution-display">
-      <div className="original-chord-section">
+      {/* <div className="original-chord-section">
         <h3>Original Chord</h3>
         <div className="chord-card original">
           <div className="chord-symbol-large">{originalChord}</div>
           <MusicNotation chords={[originalChord]} width={300} height={150} />
         </div>
-      </div>
+      </div> */}
 
       <div className="substitutions-section">
         <h3>
@@ -77,7 +77,7 @@ const ChordSubstitutionDisplay: React.FC<ChordSubstitutionDisplayProps> = ({
                 </div>
 
                 <div className="substitution-notation">
-                  <MusicNotation chords={[sub.chord]} width={250} height={120} />
+                  <MusicNotation chords={[sub.chord]} width={250} height={220} />
                 </div>
 
                 <div className="substitution-info">

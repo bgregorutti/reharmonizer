@@ -60,7 +60,7 @@ def seed_chords(db):
                 root_note=m21_c.root().name,
                 chord_quality=quality,
                 intervals=[p.midi - m21_c.root().midi for p in m21_c.pitches],
-                notes=[p.name for p in m21_c.pitches],
+                notes=m21_c.pitchNames
             )
 
             db.add(chord_obj)

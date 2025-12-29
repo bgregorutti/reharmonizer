@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import SessionLocal
 from app.models import Chord, ChordSubstitution
-from music21 import pitch, interval
+from music21 import harmony
 
 
 class SubstitutionGenerator:

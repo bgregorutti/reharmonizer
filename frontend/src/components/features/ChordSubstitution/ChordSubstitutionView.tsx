@@ -163,7 +163,7 @@ const ChordSubstitutionView: React.FC = () => {
       {/* Chord Selection for Substitution */}
       {selectedChords.length > 0 && (
         <div className="chord-selection-section">
-          <h3>Select a Chord to Reharmonize</h3>
+          <h3>Select a Chord</h3>
           <div className="chord-buttons">
             {selectedChords.map((chord, index) => (
               <button
