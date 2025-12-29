@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import SessionLocal, engine, Base
 from app.models import Chord, KeySignature, SubstitutionRule, ReharmonizationPattern
-from music21 import chord as m21_chord, key as m21_key
+from music21 import harmony, key as m21_key
 
 
 def seed_chords(db):
@@ -38,8 +38,8 @@ def seed_chords(db):
 
     for chord_symbol in common_chords:
         try:
-            # Use music21 to parse chord
-            m21_c = m21_chord.Chord(chord_symbol)
+            # Use music21 ChordSymbol to parse chord symbols
+            m21_c = harmony.ChordSymbol(chord_symbol)
 
             # Determine chord quality
             if m21_c.isMajorTriad():
@@ -48,9 +48,9 @@ def seed_chords(db):
                 quality = "minor"
             elif m21_c.isDominantSeventh():
                 quality = "dominant7"
-            elif m21_c.isMajorSeventh():
+            elif m21_c.isSeventh() and m21_c.isMajorTriad():
                 quality = "major7"
-            elif m21_c.isMinorSeventh():
+            elif m21_c.isSeventh() and m21_c.isMinorTriad():
                 quality = "minor7"
             else:
                 quality = "other"
@@ -92,7 +92,7 @@ def seed_key_signatures(db):
             sharps = key_obj.sharps
 
             key_sig = KeySignature(
-                key_name=f"{key_name} major",
+                key_name=f"{key_name}",
                 tonic=key_name,
                 mode="major",
                 sharps_flats=sharps,
@@ -102,7 +102,7 @@ def seed_key_signatures(db):
 
             db.add(key_sig)
             count += 1
-            print(f"  Added key: {key_name} major")
+            print(f"  Added key: {key_name}major")
 
         except Exception as e:
             print(f"  Error adding key {key_name} major: {e}")
@@ -114,7 +114,7 @@ def seed_key_signatures(db):
             sharps = key_obj.sharps
 
             key_sig = KeySignature(
-                key_name=f"{key_name} minor",
+                key_name=f"{key_name}m",
                 tonic=key_name,
                 mode="minor",
                 sharps_flats=sharps,
@@ -124,7 +124,7 @@ def seed_key_signatures(db):
 
             db.add(key_sig)
             count += 1
-            print(f"  Added key: {key_name} minor")
+            print(f"  Added key: {key_name}minor")
 
         except Exception as e:
             print(f"  Error adding key {key_name} minor: {e}")

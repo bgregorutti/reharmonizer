@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Reharmonizer API"
     APP_VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 
     # CORS - stored as string, parsed to list via computed field
