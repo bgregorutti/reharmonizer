@@ -108,7 +108,7 @@ const ChordSubstitutionView: React.FC = () => {
   return (
     <div className="chord-substitution-view">
       <div className="view-header">
-        <h1>🎵 Chord Reharmonization & Improvisation</h1>
+        <h1>Chord substitutions</h1>
         <p className="subtitle">
           Discover new chord substitutions and improvisation notes for your music
         </p>

@@ -1,47 +1,63 @@
-# Reharmonizer - Music Reharmonization Web Application
+# Reharmonizer
 
-A comprehensive web application for music reharmonization, chord substitution, and improvisation suggestions using music theory algorithms.
+A web application for chord substitution and reharmonization using music theory algorithms.
 
 ## Features
 
-- **Key Signature to Chords**: Get diatonic chord suggestions from key signatures
-- **Chord Substitutions**: Advanced reharmonization with:
-  - Tritone substitutions
-  - Diatonic substitutions
-  - Circle of fifths progressions
-  - Chromatic approach chords
-- **Chord to Notes**: Improvisation helper showing chord tones, scales, tensions, and avoid notes
-- **Music Notation**: Visual rendering with VexFlow
-- **MusicXML Support**: Import and export progressions
+### Chord Substitutions
+Interactive chord substitution tool with dual input modes:
+- **Classical Mode**: Select key signature (30 major/minor keys) to generate diatonic chords
+- **Modern Mode**: Input custom chord progressions
+
+**Substitution Techniques:**
+- **All Techniques**: Best substitutions combining all methods
+- **Diatonic**: Chords sharing common tones within the same key
+- **Circle of Fifths**: Chords related by fifth intervals (strong voice leading)
+- **Relative Major/Minor**: Same key signature, different tonal center
+- **Parallel Major/Minor**: Same root note, different quality (modal interchange)
+- **Chromatic Approach**: Approach chords a semitone away (jazz technique)
+- **Tritone Substitution**: Dominant 7th chords a tritone apart (jazz technique)
+
+Each chord displays:
+- 5 alternative substitution options
+- Music notation (VexFlow rendering)
+- Improvisation notes with chord tones and scale recommendations
+
+### Reharmonizer (Coming Soon)
+Upload a musical phrase and receive chord recommendations based on the melody.
 
 ## Tech Stack
 
-- **Core Package**: `reharmonizer-core` - UV package with music theory algorithms
 - **Backend**: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL
-- **Frontend**: React 18, TypeScript, Vite, VexFlow
+- **Frontend**: React 18, TypeScript, Vite, React Router
+- **Music Notation**: VexFlow for rendering chord symbols and notes
 - **Database**: PostgreSQL 15
 - **Development**: Docker, docker-compose
-- **Music Theory**: music21 (via reharmonizer-core)
 
 ## Project Structure
 
 ```
 reharmonizer/
-├── reharmonizer-core/   # Core music theory package (UV package)
-│   └── src/
-│       └── reharmonizer_core/
-│           ├── substitution/     # Chord & note recommendation algorithms
-│           ├── theory/           # Music theory utilities
-│           └── music21_integration/  # Music21 wrapper
 ├── backend/              # Python/FastAPI backend
-│   ├── app/             # Application code (uses reharmonizer-core)
+│   ├── app/
+│   │   ├── api/         # REST API endpoints
+│   │   ├── models/      # SQLAlchemy ORM models
+│   │   ├── schemas/     # Pydantic validation schemas
+│   │   ├── services/    # Business logic & music theory algorithms
+│   │   └── repositories/# Data access layer
 │   ├── alembic/         # Database migrations
-│   ├── scripts/         # Utility scripts
-│   └── tests/           # Tests
+│   └── scripts/         # Utility scripts (seeding, etc.)
 ├── frontend/            # React/TypeScript frontend
-│   └── src/            # Source code
-├── docker/             # Docker configuration
-└── docker-compose.yml  # Development environment
+│   └── src/
+│       ├── components/  # React components
+│       │   ├── features/    # Feature-specific components
+│       │   ├── layout/      # Layout components
+│       │   ├── common/      # Reusable components
+│       │   └── pages/       # Page components
+│       ├── services/    # API client services
+│       ├── store/       # Context API state management
+│       └── types/       # TypeScript definitions
+└── docker-compose.yml   # Development environment
 ```
 
 ## Getting Started
@@ -90,139 +106,44 @@ alembic upgrade head
 python scripts/seed_database.py
 ```
 
-## Development
+## API Endpoints
 
-### Core Package
+Available at `http://localhost:8000/api/v1`:
+- `GET /keys` - List available key signatures
+- `GET /keys/{key}/chords` - Get diatonic chords for a key
+- `POST /reharmonize` - Get chord substitutions
+- `GET /improvisation/notes/{chord}` - Get improvisation notes and scales
 
-The `reharmonizer-core` package contains the music theory logic:
-- **substitution/**: Chord and note recommendation algorithms
-- **theory/**: Chord analyzer, scale generator
-- **music21_integration/**: Wrapper around music21 library
+Interactive API documentation: http://localhost:8000/docs
 
-### Backend
+## Music Theory Approach
 
-The backend uses FastAPI with the following structure:
-- **models/**: SQLAlchemy ORM models
-- **schemas/**: Pydantic schemas for validation
-- **api/**: REST API endpoints
-- **services/**: Business logic layer (wraps reharmonizer-core)
-- **repositories/**: Data access layer
+The application uses a **database-driven approach** with pre-computed chord substitution relationships:
 
-API endpoints are available at `/api/v1`:
-- `/chords` - Chord operations
-- `/keys` - Key signature operations
-- `/reharmonize` - Reharmonization endpoints
-- `/improvisation/notes/{chord}` - Get improvisation notes
+### Chord Substitution Database
+- **15,000+ substitution pairs** covering major music theory techniques
+- Each substitution includes technique classification, shared notes, and compatibility scores
+- Techniques include: diatonic, tritone, circle of fifths, chromatic, relative/parallel modal interchange
 
-### Frontend
+### Substitution Algorithm
+1. Query database for substitutions matching selected technique
+2. Filter by compatibility criteria (shared notes, voice leading quality)
+3. Return top 5 ranked substitutions
+4. Display with music notation and improvisation notes
 
-The frontend uses React with TypeScript:
-- **components/**: React components (features, layout, common)
-- **hooks/**: Custom React hooks
-- **services/**: API client services
-- **store/**: Context API state management
-- **types/**: TypeScript type definitions
+### Improvisation Notes
+- Extract chord tones (root, third, fifth, seventh)
+- Determine appropriate scales based on chord quality
+- Provide scale recommendations and tension notes
 
-### Running Tests
-
-```bash
-# Backend tests
-cd backend && pytest
-
-# Frontend tests
-cd frontend && npm test
-```
-
-## Implementation Status
-
-### Phase 1: Foundation ✅ (Completed)
-- ✅ Project structure created
-- ✅ Backend skeleton with FastAPI
-- ✅ Frontend skeleton with Vite + React + TypeScript
-- ✅ Docker configuration
-- ✅ Database schema and migrations
-- ✅ Seed scripts
-
-### Phase 2: Music Theory Core (Next)
-- ⏳ music21 integration
-- ⏳ Music theory services
-- ⏳ Chord analyzer
-- ⏳ Scale generator
-
-### Phase 3: Key Signature to Chords
-- ⏳ Backend API implementation
-- ⏳ Frontend components
-- ⏳ VexFlow integration
-
-### Phase 4: Chord Substitutions
-- ⏳ Substitution algorithms
-- ⏳ Reharmonization engine
-- ⏳ Frontend integration
-
-### Phase 5: Chord to Notes
-- ⏳ Improvisation notes calculation
-- ⏳ Frontend display
-
-### Phase 6: MusicXML Support
-- ⏳ Import/export functionality
-
-### Phase 7: Polish & Testing
-- ⏳ UI/UX improvements
-- ⏳ Comprehensive testing
-- ⏳ Documentation
-
-## API Documentation
-
-Once the backend is running, visit http://localhost:8000/docs for interactive API documentation (Swagger UI).
-
-## Contributing
-
-This is a project in active development. Features are being implemented according to the roadmap above.
-
-## Music Theory Implementation
-
-### Current Implementation (Simple & Functional)
-
-The application currently uses a **simple random selection** approach:
-
-1. **Chord Recommendations**: Randomly select 5 chords from the database
-   - Example: For `C7`, might suggest `Db7`, `Em`, `G7`, `Am`, `Fmaj7`
-   - Provides immediate functionality with minimal complexity
-
-2. **Note Recommendations**: Extract chord tones and scale notes, randomly select 5
-   - Example: For `Cmaj7`, returns chord tones `[C, E, G, B]` and suggests notes like `D`, `G`, `A`
-   - Uses music21 to determine appropriate scales (major, minor, mixolydian, etc.)
-
-This simple implementation allows the application to work immediately while we develop more sophisticated algorithms.
-
-### Planned: Similarity Score Algorithm
-
-Future versions will use **similarity scoring** to make smarter recommendations based on:
-
-- **Shared Notes**: Chords with common notes sound more related
-- **Interval Relationships**: Similar interval structures
-- **Harmonic Function**: Tonic, subdominant, dominant relationships
-- **Voice Leading Quality**: Smooth transitions between chords
-- **Genre-Specific Rules**: Jazz vs pop vs classical preferences
-
-See [SIMILARITY_SCORE_PLAN.md](SIMILARITY_SCORE_PLAN.md) for the complete implementation plan.
-
-### Music Theory Concepts (To Be Fully Implemented)
-
-The application will implement several advanced music theory concepts:
-
-- **Tritone Substitution**: Replace V7 with bII7 (dominant chords a tritone apart)
-- **Diatonic Substitution**: Substitute chords within a key (I ↔ iii, ii ↔ IV)
-- **Circle of Fifths**: Add ii-V progressions, extend using fifth relationships
-- **Chromatic Approach**: Add chromatic chords that lead into target chords
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for future enhancements and roadmap.
 
 ## License
 
-[Add your license here]
+MIT License
 
 ## Acknowledgments
 
-- **music21**: Python toolkit for computer-aided musicology
 - **VexFlow**: Music notation rendering library
 - **FastAPI**: Modern Python web framework
 - **React**: UI library

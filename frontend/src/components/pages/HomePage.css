@@ -1,0 +1,106 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.project-title {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.project-title h1 {
+  font-size: 3rem;
+  color: #333;
+  font-weight: 700;
+  margin: 0;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 3rem;
+}
+
+.nav-button {
+  flex: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+}
+
+.nav-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button h2 {
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.nav-button p {
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.nav-button:nth-child(2) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.github-link-container {
+  text-align: center;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #24292e;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.github-link:hover {
+  background-color: #444d56;
+}
+
+.github-link svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .buttons-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .project-title h1 {
+    font-size: 2rem;
+  }
+
+  .nav-button {
+    padding: 2rem 1.5rem;
+  }
+
+  .nav-button h2 {
+    font-size: 1.5rem;
+  }
+}

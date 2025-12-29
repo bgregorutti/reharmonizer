@@ -1,0 +1,15 @@
+.reharmonizer-view {
+  padding: 2rem;
+  height: 100%;
+}
+
+.reharmonizer-view .view-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.reharmonizer-view .view-header h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
