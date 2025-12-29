@@ -14,7 +14,8 @@ export const chordService = {
 
   async getChordsByKey(keySignature: string): Promise<Chord[]> {
     const response = await apiClient.get(`/keys/${keySignature}/chords`);
-    return response.data;
+    // Backend returns {key: string, chords: Chord[], message: string}
+    return response.data.chords || [];
   },
 
   async getChord(symbol: string): Promise<Chord> {
