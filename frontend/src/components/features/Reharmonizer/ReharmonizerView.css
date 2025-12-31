@@ -1,15 +1,58 @@
 .reharmonizer-view {
   padding: 2rem;
-  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .reharmonizer-view .view-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
 }
 
 .reharmonizer-view .view-header h1 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: #333;
   margin-bottom: 0.5rem;
+}
+
+.view-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+}
+
+.view-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background-color: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 6px;
+  color: #c62828;
+  font-size: 0.95rem;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .reharmonizer-view {
+    padding: 1rem;
+  }
+
+  .reharmonizer-view .view-header h1 {
+    font-size: 2rem;
+  }
+
+  .view-subtitle {
+    font-size: 1rem;
+  }
 }
