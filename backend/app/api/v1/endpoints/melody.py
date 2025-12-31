@@ -320,6 +320,12 @@ def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
         melody_notes = melody_upload.melody_notes or []
         for note_data in melody_notes:
             try:
+                # Skip notes with zero or negative duration
+                duration_ql = note_data.get("duration", 1.0)
+                if duration_ql <= 0.0:
+                    print(f"Skipping note with zero duration: {note_data}")
+                    continue
+
                 if note_data.get("is_rest"):
                     note_obj = m21.note.Rest()
                 else:
@@ -327,7 +333,6 @@ def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
                     note_obj = m21.note.Note(pitch_str)
 
                 # Set duration (in quarter notes)
-                duration_ql = note_data.get("duration", 1.0)
                 note_obj.quarterLength = duration_ql
 
                 melody_part.append(note_obj)
@@ -419,13 +424,18 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
         melody_notes = melody_upload.melody_notes or []
         for note_data in melody_notes:
             try:
+                # Skip notes with zero or negative duration
+                duration_ql = note_data.get("duration", 1.0)
+                if duration_ql <= 0.0:
+                    print(f"Skipping note with zero duration: {note_data}")
+                    continue
+
                 if note_data.get("is_rest"):
                     note_obj = m21.note.Rest()
                 else:
                     pitch_str = note_data.get("pitch", "C4")
                     note_obj = m21.note.Note(pitch_str)
 
-                duration_ql = note_data.get("duration", 1.0)
                 note_obj.quarterLength = duration_ql
 
                 melody_part.append(note_obj)
@@ -433,33 +443,79 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
                 print(f"Error adding note: {e}")
                 continue
 
-        # Add chord symbols
-        chord_progression = harmonization.chord_progression or []
-        for i, chord_symbol in enumerate(chord_progression):
-            try:
-                cs = m21.harmony.ChordSymbol(chord_symbol)
-                cs.offset = i * 4.0
-                melody_part.insert(cs.offset, cs)
-            except Exception as e:
-                print(f"Error adding chord symbol {chord_symbol}: {e}")
-                continue
+        # Add chord symbols using timing information
+        chord_timing = harmonization.chord_timing if hasattr(harmonization, 'chord_timing') else []
+
+        if chord_timing:
+            # Use chord timing if available
+            for timing in chord_timing:
+                try:
+                    cs = m21.harmony.ChordSymbol(timing.get('symbol', 'C'))
+                    cs.offset = timing.get('offset', 0.0)
+                    # Set duration explicitly to avoid zero-duration chords
+                    duration_ql = timing.get('duration', 4.0)
+                    if duration_ql > 0:
+                        cs.quarterLength = duration_ql
+                    else:
+                        cs.quarterLength = 4.0  # Default to whole note
+                    melody_part.insert(cs.offset, cs)
+                except Exception as e:
+                    print(f"Error adding chord symbol {timing.get('symbol')}: {e}")
+                    continue
+        else:
+            # Fallback to simple progression
+            chord_progression = harmonization.chord_progression or []
+            for i, chord_symbol in enumerate(chord_progression):
+                try:
+                    cs = m21.harmony.ChordSymbol(chord_symbol)
+                    cs.offset = i * 4.0
+                    cs.quarterLength = 4.0  # Default to whole note
+                    melody_part.insert(cs.offset, cs)
+                except Exception as e:
+                    print(f"Error adding chord symbol {chord_symbol}: {e}")
+                    continue
 
         score.append(melody_part)
+
+        # Add measures to help with formatting
+        try:
+            score.makeMeasures(inPlace=True)
+        except Exception as e:
+            print(f"Warning: Could not create measures: {e}")
 
         # Export to PDF using music21's LilyPond backend
         output_dir = "/tmp/reharmonizer_exports"
         os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, f"harmonization_{harmonization_id}.pdf")
+        # Note: music21 creates a .ly file first, then LilyPond creates the actual PDF
+        # with .pdf.pdf extension
+        base_file = os.path.join(output_dir, f"harmonization_{harmonization_id}.pdf")
 
         # Use music21's musicxml.m21ToXml and then external converter
-        # For now, we'll use lilypond if available, otherwise fall back to error
         try:
-            score.write("lily.pdf", fp=output_file)
-        except:
+            print(f"Attempting to write PDF for harmonization {harmonization_id}")
+            print(f"Score duration: {score.duration.quarterLength}")
+            score.write("lily.pdf", fp=base_file)
+
+            # music21 creates the actual PDF with .pdf.pdf extension
+            actual_pdf = base_file + ".pdf"
+
+            # Check if the actual PDF was created
+            if os.path.exists(actual_pdf):
+                print(f"PDF written successfully to {actual_pdf}")
+                output_file = actual_pdf
+            else:
+                # Fallback to base file (might be just the .ly file)
+                print(f"Warning: {actual_pdf} not found, using {base_file}")
+                output_file = base_file
+
+        except Exception as err:
+            print("ERROR writing PDF:", err)
+            import traceback
+            traceback.print_exc()
             # Fallback: create a simple PDF message if LilyPond not available
             raise HTTPException(
                 status_code=501,
-                detail="PDF export requires LilyPond to be installed on the server",
+                detail=f"PDF export failed: {str(err)}",
             )
 
         return FileResponse(
