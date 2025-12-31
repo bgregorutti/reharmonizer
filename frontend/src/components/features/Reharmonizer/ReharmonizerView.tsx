@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { melodyService } from '../../../services/melodyService';
 import type {
   MelodyUploadResponse,
@@ -12,6 +13,7 @@ import HarmonizationResults from './HarmonizationResults';
 import './ReharmonizerView.css';
 
 const ReharmonizerView: React.FC = () => {
+  const navigate = useNavigate();
   const [uploadedMelody, setUploadedMelody] = useState<MelodyUploadResponse | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<MusicStyle>('jazz');
   const [harmonization, setHarmonization] = useState<HarmonizationResponse | null>(null);
@@ -63,6 +65,14 @@ const ReharmonizerView: React.FC = () => {
 
   return (
     <div className="reharmonizer-view">
+      <button
+        className="nav-button nav-back"
+        onClick={() => navigate('/substitution')}
+        title="Go to Chord Substitutions"
+      >
+        ← Chord Substitutions
+      </button>
+
       <div className="view-header">
         <h1>Reharmonizer</h1>
         <p className="view-subtitle">

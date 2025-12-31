@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import KeySignatureInput from '../KeySignature/KeySignatureInput';
 import ChordListInput from '../ChordInput/ChordListInput';
 import NoteSearchInput from '../NoteSearch/NoteSearchInput';
@@ -17,6 +18,7 @@ type InputMode = 'key' | 'chords' | 'note';
 type Technique = 'random' | 'tritone' | 'diatonic' | 'chromatic' | 'circle_fifths' | 'relative' | 'parallel';
 
 const ChordSubstitutionView: React.FC = () => {
+  const navigate = useNavigate();
   const [inputMode, setInputMode] = useState<InputMode>('chords');
   const [selectedKey, setSelectedKey] = useState<string>('');
   const [selectedChords, setSelectedChords] = useState<string[]>([]);
@@ -148,6 +150,14 @@ const ChordSubstitutionView: React.FC = () => {
 
   return (
     <div className="chord-substitution-view">
+      <button
+        className="nav-button nav-forward"
+        onClick={() => navigate('/reharmonizer')}
+        title="Go to Reharmonizer"
+      >
+        Reharmonizer →
+      </button>
+
       <div className="view-header">
         <h1>Chord substitutions</h1>
         <p className="subtitle">
