@@ -4,7 +4,7 @@ This document describes the complete frontend implementation for the Reharmonize
 
 ## Overview
 
-The frontend is a React + TypeScript application that provides an interactive interface for music reharmonization and improvisation. Users can input music via key signatures (classical) or chord lists (modern), then get chord substitutions and improvisation notes with visual music notation.
+The frontend is a React + TypeScript application that provides an interactive interface for music reharmonization and improvisation. Users can input music via key signatures (classical), chord lists (modern), or search for chords by note, then get chord substitutions and improvisation notes with visual music notation.
 
 ## Architecture
 
@@ -29,6 +29,11 @@ frontend/src/
 │   │   ├── ChordInput/
 │   │   │   ├── ChordListInput.tsx     # Modern mode: chord list input
 │   │   │   └── ChordListInput.css
+│   │   ├── NoteSearch/
+│   │   │   ├── NoteSearchInput.tsx    # Note Search mode: search chords by note
+│   │   │   ├── NoteSearchInput.css
+│   │   │   ├── ChordSearchResultsDisplay.tsx  # Display search results with notation
+│   │   │   └── ChordSearchResultsDisplay.css
 │   │   ├── ChordDisplay/
 │   │   │   ├── ChordSubstitutionDisplay.tsx  # Shows chord substitutions
 │   │   │   └── ChordSubstitutionDisplay.css
@@ -81,6 +86,24 @@ frontend/src/
 - Clear all functionality
 - Help text with common chord types
 - Press Enter to add chord
+
+#### Note Search Mode
+**Components:** `NoteSearchInput.tsx`, `ChordSearchResultsDisplay.tsx`
+
+- Search for all chords containing a specific note
+- 12-note selector (C through B with sharps)
+- Scale type selection (Major/Minor)
+- Visual music notation for all matching chords
+- Highlights the searched note in each chord
+
+**Features:**
+- Interactive note buttons (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+- Scale context selector (Major/Minor)
+- Grid display of all matching chords
+- VexFlow notation for each chord
+- Chord quality badges (major, minor, dominant7, etc.)
+- Searched note highlighting in results
+- Handles enharmonic equivalents
 
 ### 2. Substitution Techniques
 
@@ -174,8 +197,9 @@ Uses VexFlow to render:
 
 1. **GET /api/v1/chords** - Fetch all chords
 2. **GET /api/v1/keys/{key}/chords** - Fetch chords for key signature
-3. **GET /api/v1/reharmonize/substitutions/{chord}?technique={technique}** - Get substitutions
-4. **GET /api/v1/improvisation/notes/{chord}?count={count}** - Get improvisation notes
+3. **GET /api/v1/chords/search/by-note?note={note}&scale_type={scale_type}** - Search chords by note
+4. **GET /api/v1/reharmonize/substitutions/{chord}?technique={technique}** - Get substitutions
+5. **GET /api/v1/improvisation/notes/{chord}?count={count}** - Get improvisation notes
 
 ### API Client Configuration
 
@@ -186,6 +210,8 @@ Uses VexFlow to render:
 - Error interceptor for logging
 
 ## User Flow
+
+### Flow A: Chord Substitution (Classical/Modern modes)
 
 1. **Select Input Mode**
    - Classical (Key Signature) or Modern (Chord List)
@@ -204,6 +230,21 @@ Uses VexFlow to render:
    - See chord substitutions with music notation
    - See improvisation notes with recommendations
    - Click any substitution to explore it
+
+### Flow B: Note Search Mode
+
+1. **Select Note Search Mode**
+   - Click "🔍 Note Search" tab
+
+2. **Select Note and Scale**
+   - Choose note from C through B (with sharps)
+   - Select scale type (Major/Minor)
+
+3. **View Results**
+   - See all chords containing that note
+   - Visual music notation for each chord
+   - Searched note highlighted in results
+   - Chord quality badges and full note composition
 
 ## Styling
 

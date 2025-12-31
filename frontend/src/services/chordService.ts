@@ -57,6 +57,16 @@ export const chordService = {
     });
     return response.data;
   },
+
+  async searchChordsByNote(
+    note: string,
+    scaleType: string = 'major'
+  ): Promise<Chord[]> {
+    const response = await apiClient.get('/chords/search/by-note', {
+      params: { note, scale_type: scaleType },
+    });
+    return response.data;
+  },
 };
 
 export default chordService;

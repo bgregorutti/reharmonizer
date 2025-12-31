@@ -1,0 +1,178 @@
+.chord-search-results {
+  margin-top: 2rem;
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.results-header h2 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.highlight-note {
+  color: #3498db;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  background: #ebf5fb;
+  border-radius: 4px;
+}
+
+.results-context {
+  color: #7f8c8d;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.chords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.chord-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chord-card:hover {
+  border-color: #3498db;
+  box-shadow: 0 6px 12px rgba(52, 152, 219, 0.15);
+  transform: translateY(-4px);
+}
+
+.chord-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.chord-symbol {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.chord-quality-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chord-quality-badge.major {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.chord-quality-badge.minor {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.chord-quality-badge.dominant7 {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.chord-quality-badge.major7 {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.chord-quality-badge.minor7 {
+  background: #e0f2f1;
+  color: #00695c;
+}
+
+.chord-notation {
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.render-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+  padding: 1rem;
+}
+
+.chord-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  min-width: 50px;
+}
+
+.info-value {
+  color: #2c3e50;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.notes-list {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.note {
+  padding: 0.2rem 0.5rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.note.searched-note {
+  background: #3498db;
+  color: white;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+@media (max-width: 768px) {
+  .chords-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chord-card {
+    padding: 1rem;
+  }
+
+  .chord-symbol {
+    font-size: 1.3rem;
+  }
+}

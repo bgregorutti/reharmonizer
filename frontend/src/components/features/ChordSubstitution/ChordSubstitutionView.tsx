@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import KeySignatureInput from '../KeySignature/KeySignatureInput';
 import ChordListInput from '../ChordInput/ChordListInput';
+import NoteSearchInput from '../NoteSearch/NoteSearchInput';
 import ChordSubstitutionDisplay from '../ChordDisplay/ChordSubstitutionDisplay';
 import ImprovisationNotesDisplay from '../NotesDisplay/ImprovisationNotesDisplay';
+import ChordSearchResultsDisplay from '../NoteSearch/ChordSearchResultsDisplay';
 import chordService from '../../../services/chordService';
 import {
+  Chord,
   SubstitutionOption,
   ImprovisationNotesResponse,
 } from '../../../types/chord';
 import './ChordSubstitutionView.css';
 
-type InputMode = 'key' | 'chords';
+type InputMode = 'key' | 'chords' | 'note';
 type Technique = 'random' | 'tritone' | 'diatonic' | 'chromatic' | 'circle_fifths' | 'relative' | 'parallel';
 
 const ChordSubstitutionView: React.FC = () => {
@@ -22,8 +25,28 @@ const ChordSubstitutionView: React.FC = () => {
   const [substitutions, setSubstitutions] = useState<SubstitutionOption[]>([]);
   const [improvisationNotes, setImprovisationNotes] =
     useState<ImprovisationNotesResponse | null>(null);
+  const [searchResults, setSearchResults] = useState<Chord[]>([]);
+  const [searchedNote, setSearchedNote] = useState<string>('');
+  const [searchedScaleType, setSearchedScaleType] = useState<string>('major');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Clear results when switching input modes
+  useEffect(() => {
+    if (inputMode === 'note') {
+      // Clear substitution results when entering Note Search
+      setSubstitutions([]);
+      setImprovisationNotes(null);
+      setCurrentChord('');
+      setSelectedChords([]);
+      setSelectedKey('');
+    } else {
+      // Clear note search results when leaving Note Search
+      setSearchResults([]);
+      setSearchedNote('');
+    }
+    setError(null);
+  }, [inputMode]);
 
   const handleKeySignatureSelect = async (key: string) => {
     setSelectedKey(key);
@@ -61,6 +84,24 @@ const ChordSubstitutionView: React.FC = () => {
       setImprovisationNotes(notesResponse);
     } catch (err) {
       setError('Failed to get substitutions and notes');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNoteSearch = async (note: string, scaleType: string) => {
+    setError(null);
+    setSearchedNote(note);
+    setSearchedScaleType(scaleType);
+
+    try {
+      setLoading(true);
+      const chords = await chordService.searchChordsByNote(note, scaleType);
+      setSearchResults(chords);
+    } catch (err) {
+      setError(`No chords found containing note '${note}'`);
+      setSearchResults([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -128,14 +169,22 @@ const ChordSubstitutionView: React.FC = () => {
         >
           🎸 Modern (Chord List)
         </button>
+        <button
+          className={`mode-btn ${inputMode === 'note' ? 'active' : ''}`}
+          onClick={() => setInputMode('note')}
+        >
+          🔍 Note Search
+        </button>
       </div>
 
       {/* Input Section */}
       <div className="input-section">
         {inputMode === 'key' ? (
           <KeySignatureInput onKeySignatureSelect={handleKeySignatureSelect} />
-        ) : (
+        ) : inputMode === 'chords' ? (
           <ChordListInput onChordsChange={handleChordsChange} />
+        ) : (
+          <NoteSearchInput onSearch={handleNoteSearch} />
         )}
       </div>
 
@@ -207,6 +256,17 @@ const ChordSubstitutionView: React.FC = () => {
       {!loading && improvisationNotes && (
         <div className="results-section">
           <ImprovisationNotesDisplay notesData={improvisationNotes} />
+        </div>
+      )}
+
+      {/* Note Search Results */}
+      {!loading && inputMode === 'note' && searchResults.length > 0 && (
+        <div className="results-section">
+          <ChordSearchResultsDisplay
+            searchedNote={searchedNote}
+            scaleType={searchedScaleType}
+            chords={searchResults}
+          />
         </div>
       )}
     </div>

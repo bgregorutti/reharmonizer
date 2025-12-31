@@ -61,6 +61,59 @@ curl "http://localhost:8000/api/v1/chords/?skip=0&limit=5"
 
 ---
 
+#### Search Chords by Note
+```bash
+GET /chords/search/by-note
+```
+
+**Query Parameters:**
+- `note` (string, required): The note to search for (e.g., "C", "D#", "Eb")
+- `scale_type` (string, optional): Scale context - "major" or "minor" (default: "major")
+
+**Example:**
+```bash
+# Search for all chords containing C
+curl "http://localhost:8000/api/v1/chords/search/by-note?note=C&scale_type=major"
+
+# Search for all chords containing D#
+curl "http://localhost:8000/api/v1/chords/search/by-note?note=D%23&scale_type=minor"
+```
+
+**Response:**
+```json
+[
+  {
+    "symbol": "C",
+    "root_note": "C",
+    "notes": ["C", "E", "G"],
+    "intervals": [0, 4, 7],
+    "chord_quality": "major",
+    "id": 1,
+    "roman_numeral": null,
+    "function": null,
+    "created_at": "2025-12-29T15:32:10.988714Z"
+  },
+  {
+    "symbol": "Fmaj7",
+    "root_note": "F",
+    "notes": ["F", "A", "C", "E"],
+    "intervals": [0, 4, 7, 11],
+    "chord_quality": "major7",
+    "id": 18,
+    "roman_numeral": null,
+    "function": null,
+    "created_at": "2025-12-29T15:32:10.988714Z"
+  }
+]
+```
+
+**Features:**
+- Handles enharmonic equivalents (C# = D-, D# = E-, etc.)
+- Returns all chords in the database containing the specified note
+- Scale type parameter for future filtering capabilities
+
+---
+
 ### 2. Key Signature Endpoints
 
 #### Get All Key Signatures
