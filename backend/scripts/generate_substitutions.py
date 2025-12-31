@@ -4,7 +4,7 @@ Generate chord substitutions based on music theory principles.
 This script creates all possible chord substitution relationships and stores them
 in the database. It implements various substitution techniques:
 - Tritone substitution
-- Diatonic substitution
+- Functional harmony substitutions (dominant, subdominant, mediant, submediant, leading tone)
 - Chromatic substitution
 - Circle of fifths
 - Relative/parallel chord substitutions
@@ -109,39 +109,148 @@ class SubstitutionGenerator:
 
         return substitutions
 
-    def generate_diatonic_substitution(self, source_chord):
+    def get_chord_position_map(self, chord_symbol):
         """
-        Generate diatonic substitutions.
+        Map each note in a chord to its functional position.
+        Returns: dict mapping note_name -> position_name
+        """
+        try:
+            cs = harmony.ChordSymbol(chord_symbol)
+            pitch_names = cs.pitchNames
 
-        Diatonic substitution: Chords that share many common tones within the same key.
+            # Map positions based on number of notes in chord
+            position_map = {}
+            positions = ["root", "third", "fifth", "seventh", "ninth", "eleventh", "thirteenth"]
 
-        Common diatonic substitutions:
-        - I ↔ iii (share 2 notes)
-        - I ↔ vi (relative minor)
-        - ii ↔ IV (share 2 notes)
-        - V ↔ vii° (share 2 notes)
+            for i, note in enumerate(pitch_names):
+                if i < len(positions):
+                    normalized_note = self.normalize_note(note)
+                    position_map[normalized_note] = positions[i]
+
+            return position_map
+        except Exception:
+            return {}
+
+    def check_functional_relationship(self, source_chord, target_chord, spec):
+        """
+        Check if a chord pair matches a functional harmony specification.
+
+        Returns:
+            bool: True if the relationship matches the spec
+            list: Matched common notes with their positions
+        """
+        # Get position maps for both chords
+        source_map = self.get_chord_position_map(source_chord.symbol)
+        target_map = self.get_chord_position_map(target_chord.symbol)
+
+        if not source_map or not target_map:
+            return False, []
+
+        # Find common notes and check if they match the required positions
+        matched_notes = []
+
+        for source_note, source_pos in source_map.items():
+            if source_note in target_map:
+                target_pos = target_map[source_note]
+
+                # Check if this common note matches any required position pair
+                for i, src_pos_required in enumerate(spec["source_positions"]):
+                    tgt_pos_required = spec["target_positions"][i]
+
+                    if source_pos == src_pos_required and target_pos == tgt_pos_required:
+                        matched_notes.append({
+                            "note": source_note,
+                            "source_position": source_pos,
+                            "target_position": target_pos
+                        })
+                        break
+
+        # Check if we have the required number of common notes
+        if len(matched_notes) >= spec["nr_common_notes"]:
+            return True, matched_notes
+
+        return False, []
+
+    def generate_functional_harmony_substitutions(self, source_chord):
+        """
+        Generate functional harmony substitutions based on voice leading principles.
+
+        Functional harmony relationships:
+        - Mediant:      3rd→1st, 5th→3rd, 7th→5th (3 common notes)
+        - Subdominant:  1st→5th, 3rd→7th           (2 common notes)
+        - Dominant:     5th→1st, 7th→3rd           (2 common notes)
+        - Submediant:   1st→3rd, 3rd→5th, 5th→7th (3 common notes)
+        - Leading tone: 7th→1st                    (1 common note)
         """
         substitutions = []
 
+        # Define functional harmony specifications
+        functional_specs = {
+            "mediant": {
+                "nr_common_notes": 3,
+                "source_positions": ["third", "fifth", "seventh"],
+                "target_positions": ["root", "third", "fifth"],
+                "score": 0.85,
+                "usage_context": "classical"
+            },
+            "subdominant": {
+                "nr_common_notes": 2,
+                "source_positions": ["root", "third"],
+                "target_positions": ["fifth", "seventh"],
+                "score": 0.90,
+                "usage_context": "classical"
+            },
+            "dominant": {
+                "nr_common_notes": 2,
+                "source_positions": ["fifth", "seventh"],
+                "target_positions": ["root", "third"],
+                "score": 0.95,
+                "usage_context": "classical"
+            },
+            "submediant": {
+                "nr_common_notes": 3,
+                "source_positions": ["root", "third", "fifth"],
+                "target_positions": ["third", "fifth", "seventh"],
+                "score": 0.85,
+                "usage_context": "classical"
+            },
+            "leading_tone": {
+                "nr_common_notes": 1,
+                "source_positions": ["seventh"],
+                "target_positions": ["root"],
+                "score": 0.80,
+                "usage_context": "classical"
+            }
+        }
+
+        # Check each target chord for functional relationships
         for symbol, chord in self.chords.items():
             if chord.id == source_chord.id:
                 continue
 
-            # Count common notes
-            common_notes = self.count_common_notes(source_chord, chord)
+            # Check each functional relationship type
+            for func_type, spec in functional_specs.items():
+                is_match, matched_notes = self.check_functional_relationship(
+                    source_chord, chord, spec
+                )
 
-            # If they share 2+ notes, it's a good diatonic substitution
-            if common_notes >= 2:
-                score = min(0.9, 0.5 + (common_notes * 0.2))
+                if is_match:
+                    # Create description with matched notes
+                    note_info = ", ".join([
+                        f"{n['note']}({n['source_position']}→{n['target_position']})"
+                        for n in matched_notes
+                    ])
 
-                substitutions.append({
-                    "target_chord": chord,
-                    "technique": "diatonic",
-                    "score": score,
-                    "description": f"Shares {common_notes} common tone(s) with {source_chord.symbol}",
-                    "usage_context": "classical",
-                    "relationship_type": "shared_tones"
-                })
+                    description = f"{func_type.capitalize()} relationship: {note_info}"
+
+                    substitutions.append({
+                        "target_chord": chord,
+                        "technique": func_type,
+                        "score": spec["score"],
+                        "description": description,
+                        "usage_context": spec["usage_context"],
+                        "relationship_type": "functional_harmony"
+                    })
 
         return substitutions
 
@@ -319,7 +428,7 @@ class SubstitutionGenerator:
             # Generate all types of substitutions
             techniques = [
                 self.generate_tritone_substitution,
-                self.generate_diatonic_substitution,
+                self.generate_functional_harmony_substitutions,
                 self.generate_relative_substitution,
                 self.generate_parallel_substitution,
                 self.generate_circle_fifths_substitution,
