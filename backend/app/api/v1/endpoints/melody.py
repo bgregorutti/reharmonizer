@@ -477,12 +477,6 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
 
         score.append(melody_part)
 
-        # Add measures to help with formatting
-        try:
-            score.makeMeasures(inPlace=True)
-        except Exception as e:
-            print(f"Warning: Could not create measures: {e}")
-
         # Export to PDF using music21's LilyPond backend
         output_dir = "/tmp/reharmonizer_exports"
         os.makedirs(output_dir, exist_ok=True)
@@ -494,10 +488,45 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
         try:
             print(f"Attempting to write PDF for harmonization {harmonization_id}")
             print(f"Score duration: {score.duration.quarterLength}")
-            score.write("lily.pdf", fp=base_file)
 
-            # music21 creates the actual PDF with .pdf.pdf extension
-            actual_pdf = base_file + ".pdf"
+            # First, generate the LilyPond file
+            score.write("lily", fp=base_file)
+
+            # Post-process the .ly file to fix deprecated LilyPond syntax
+            ly_file = base_file
+            if os.path.exists(ly_file):
+                with open(ly_file, 'r') as f:
+                    ly_content = f.read()
+
+                # Remove the problematic layout section with deprecated syntax
+                # This removes the \context block that causes syntax errors
+                import re
+                ly_content = re.sub(
+                    r'\\layout\s*\{[^}]*\\context\s*\{[^}]*\}[^}]*\}',
+                    r'\\layout { }',
+                    ly_content,
+                    flags=re.DOTALL
+                )
+
+                with open(ly_file, 'w') as f:
+                    f.write(ly_content)
+
+                print(f"Post-processed LilyPond file: {ly_file}")
+
+            # Now compile to PDF using LilyPond
+            import subprocess
+            result = subprocess.run(
+                ['lilypond', '--pdf', '-o', base_file.replace('.pdf', ''), ly_file],
+                capture_output=True,
+                text=True,
+                cwd=output_dir
+            )
+
+            if result.returncode != 0:
+                print(f"LilyPond compilation warnings/errors: {result.stderr}")
+
+            # music21 creates the actual PDF with .pdf extension (not .pdf.pdf when using manual compilation)
+            actual_pdf = base_file
 
             # Check if the actual PDF was created
             if os.path.exists(actual_pdf):
