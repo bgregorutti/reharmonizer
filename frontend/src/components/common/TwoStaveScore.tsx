@@ -128,6 +128,11 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
           const restVoice = new Voice({ num_beats: 4, beat_value: 4 });
           restVoice.setStrict(false);
           restVoice.addTickables([rest]);
+
+          new Formatter()
+            .joinVoices([restVoice])
+            .format([restVoice], staveWidth - 20);
+
           restVoice.draw(context, trebleStave);
         }
 
@@ -156,6 +161,11 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
           const restVoice = new Voice({ num_beats: 4, beat_value: 4 });
           restVoice.setStrict(false);
           restVoice.addTickables([rest]);
+
+          new Formatter()
+            .joinVoices([restVoice])
+            .format([restVoice], staveWidth - 20);
+
           restVoice.draw(context, bassStave);
         }
       }
