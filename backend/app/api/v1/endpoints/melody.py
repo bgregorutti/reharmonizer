@@ -7,7 +7,9 @@ import tempfile
 import shutil
 from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+import music21 as m21
 
 from app.database import get_db
 from app.models.melody_upload import MelodyUpload, HarmonizationResult
@@ -271,3 +273,202 @@ def get_melody_upload(upload_id: int, db: Session = Depends(get_db)):
         file_type=melody_upload.file_type,
         analysis=analysis,
     )
+
+
+@router.get("/harmonization/{harmonization_id}/export/musicxml")
+def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
+    """
+    Export harmonization result as MusicXML file.
+
+    Args:
+        harmonization_id: Harmonization result ID
+        db: Database session
+
+    Returns:
+        MusicXML file download
+    """
+    # Get harmonization result
+    harmonization = (
+        db.query(HarmonizationResult).filter_by(id=harmonization_id).first()
+    )
+
+    if not harmonization:
+        raise HTTPException(status_code=404, detail="Harmonization not found")
+
+    # Get melody upload
+    melody_upload = (
+        db.query(MelodyUpload).filter_by(id=harmonization.melody_upload_id).first()
+    )
+
+    if not melody_upload:
+        raise HTTPException(status_code=404, detail="Melody upload not found")
+
+    try:
+        # Create music21 score
+        score = m21.stream.Score()
+
+        # Add metadata
+        score.metadata = m21.metadata.Metadata()
+        score.metadata.title = f"Harmonization - {melody_upload.file_name}"
+        score.metadata.composer = "Reharmonizer AI"
+
+        # Create parts
+        melody_part = m21.stream.Part()
+        melody_part.id = "Melody"
+
+        # Add melody notes
+        melody_notes = melody_upload.melody_notes or []
+        for note_data in melody_notes:
+            try:
+                if note_data.get("is_rest"):
+                    note_obj = m21.note.Rest()
+                else:
+                    pitch_str = note_data.get("pitch", "C4")
+                    note_obj = m21.note.Note(pitch_str)
+
+                # Set duration (in quarter notes)
+                duration_ql = note_data.get("duration", 1.0)
+                note_obj.quarterLength = duration_ql
+
+                melody_part.append(note_obj)
+            except Exception as e:
+                print(f"Error adding note: {e}")
+                continue
+
+        # Add chord symbols
+        chord_progression = harmonization.chord_progression or []
+        for i, chord_symbol in enumerate(chord_progression):
+            try:
+                # Create harmony object (chord symbol)
+                cs = m21.harmony.ChordSymbol(chord_symbol)
+
+                # Calculate offset based on measure (simplified)
+                # Each measure is 4 quarter notes in 4/4 time
+                cs.offset = i * 4.0
+
+                melody_part.insert(cs.offset, cs)
+            except Exception as e:
+                print(f"Error adding chord symbol {chord_symbol}: {e}")
+                continue
+
+        score.append(melody_part)
+
+        # Export to MusicXML
+        output_dir = "/tmp/reharmonizer_exports"
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(
+            output_dir, f"harmonization_{harmonization_id}.musicxml"
+        )
+
+        score.write("musicxml", fp=output_file)
+
+        return FileResponse(
+            path=output_file,
+            media_type="application/vnd.recordare.musicxml+xml",
+            filename=f"harmonization_{harmonization_id}.musicxml",
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to export MusicXML: {str(e)}"
+        )
+
+
+@router.get("/harmonization/{harmonization_id}/export/pdf")
+def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
+    """
+    Export harmonization result as PDF file.
+
+    Args:
+        harmonization_id: Harmonization result ID
+        db: Database session
+
+    Returns:
+        PDF file download
+    """
+    # Get harmonization result
+    harmonization = (
+        db.query(HarmonizationResult).filter_by(id=harmonization_id).first()
+    )
+
+    if not harmonization:
+        raise HTTPException(status_code=404, detail="Harmonization not found")
+
+    # Get melody upload
+    melody_upload = (
+        db.query(MelodyUpload).filter_by(id=harmonization.melody_upload_id).first()
+    )
+
+    if not melody_upload:
+        raise HTTPException(status_code=404, detail="Melody upload not found")
+
+    try:
+        # Create music21 score (same as MusicXML export)
+        score = m21.stream.Score()
+
+        # Add metadata
+        score.metadata = m21.metadata.Metadata()
+        score.metadata.title = f"Harmonization - {melody_upload.file_name}"
+        score.metadata.composer = "Reharmonizer AI"
+
+        # Create parts
+        melody_part = m21.stream.Part()
+        melody_part.id = "Melody"
+
+        # Add melody notes
+        melody_notes = melody_upload.melody_notes or []
+        for note_data in melody_notes:
+            try:
+                if note_data.get("is_rest"):
+                    note_obj = m21.note.Rest()
+                else:
+                    pitch_str = note_data.get("pitch", "C4")
+                    note_obj = m21.note.Note(pitch_str)
+
+                duration_ql = note_data.get("duration", 1.0)
+                note_obj.quarterLength = duration_ql
+
+                melody_part.append(note_obj)
+            except Exception as e:
+                print(f"Error adding note: {e}")
+                continue
+
+        # Add chord symbols
+        chord_progression = harmonization.chord_progression or []
+        for i, chord_symbol in enumerate(chord_progression):
+            try:
+                cs = m21.harmony.ChordSymbol(chord_symbol)
+                cs.offset = i * 4.0
+                melody_part.insert(cs.offset, cs)
+            except Exception as e:
+                print(f"Error adding chord symbol {chord_symbol}: {e}")
+                continue
+
+        score.append(melody_part)
+
+        # Export to PDF using music21's LilyPond backend
+        output_dir = "/tmp/reharmonizer_exports"
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, f"harmonization_{harmonization_id}.pdf")
+
+        # Use music21's musicxml.m21ToXml and then external converter
+        # For now, we'll use lilypond if available, otherwise fall back to error
+        try:
+            score.write("lily.pdf", fp=output_file)
+        except:
+            # Fallback: create a simple PDF message if LilyPond not available
+            raise HTTPException(
+                status_code=501,
+                detail="PDF export requires LilyPond to be installed on the server",
+            )
+
+        return FileResponse(
+            path=output_file,
+            media_type="application/pdf",
+            filename=f"harmonization_{harmonization_id}.pdf",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export PDF: {str(e)}")

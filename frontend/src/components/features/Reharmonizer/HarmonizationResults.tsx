@@ -32,6 +32,34 @@ const HarmonizationResults: React.FC<HarmonizationResultsProps> = ({
       ? `Alternative ${selectedAlternative + 1}`
       : 'Primary Harmonization';
 
+  const handleDownload = async (format: 'musicxml' | 'pdf') => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/melody/harmonization/${result.id}/export/${format}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Download failed: ${error.detail || 'Unknown error'}`);
+        return;
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `harmonization_${result.id}.${format === 'musicxml' ? 'musicxml' : 'pdf'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download file. Please try again.');
+    }
+  };
+
   return (
     <div className="harmonization-results">
       <div className="results-header">
@@ -98,6 +126,23 @@ const HarmonizationResults: React.FC<HarmonizationResultsProps> = ({
       </div>
 
       <div className="results-footer">
+        <div className="download-section">
+          <h4>Download Results</h4>
+          <div className="download-buttons">
+            <button
+              className="download-button"
+              onClick={() => handleDownload('musicxml')}
+            >
+              📄 Download MusicXML
+            </button>
+            <button
+              className="download-button"
+              onClick={() => handleDownload('pdf')}
+            >
+              📑 Download PDF
+            </button>
+          </div>
+        </div>
         <p className="results-tip">
           Click alternative tabs above to rerender the entire score with different harmonizations
         </p>

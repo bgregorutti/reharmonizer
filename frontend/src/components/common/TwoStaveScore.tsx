@@ -45,12 +45,11 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
         return;
       }
 
-      // Create renderer
+      // Create renderer (will set width later based on total measures)
       const renderer = new Renderer(
         containerRef.current,
         Renderer.Backends.SVG
       );
-      renderer.resize(width, height);
       const context = renderer.getContext();
 
       // Process melody notes into measures
@@ -59,15 +58,20 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
       // Process chords with timing
       const chordMeasures = distributeChordsByMeasure(chordTiming);
 
-      // Determine how many measures to render (first 4 measures for now)
+      // Render all measures with horizontal scroll
       const totalMeasures = Math.max(
         Object.keys(melodyMeasures).length,
         Object.keys(chordMeasures).length
       );
-      const measuresToRender = Math.min(totalMeasures, 4);
+      const measuresToRender = totalMeasures;
 
-      // Calculate stave positions
-      const staveWidth = (width - 100) / measuresToRender;
+      // Calculate stave positions (fixed width per measure for scrolling)
+      const staveWidth = 200; // Fixed width per measure
+      const totalWidth = 50 + measuresToRender * staveWidth + 50;
+
+      // Resize renderer to accommodate all measures
+      renderer.resize(totalWidth, height);
+
       const trebleY = 40;
       const bassY = 180;
 
@@ -77,10 +81,10 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
 
         // Create treble stave (melody)
         const trebleStave = new Stave(x, trebleY, staveWidth);
-        trebleStave.addClef('treble');
 
-        // Add time signature on first measure
+        // Only add clef and time signature on first measure
         if (measureNum === 1) {
+          trebleStave.addClef('treble');
           trebleStave.addTimeSignature(timeSignature);
         }
 
@@ -88,9 +92,10 @@ const TwoStaveScore: React.FC<TwoStaveScoreProps> = ({
 
         // Create bass stave (chords)
         const bassStave = new Stave(x, bassY, staveWidth);
-        bassStave.addClef('bass');
 
+        // Only add clef and time signature on first measure
         if (measureNum === 1) {
+          bassStave.addClef('bass');
           bassStave.addTimeSignature(timeSignature);
         }
 
