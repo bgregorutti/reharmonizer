@@ -5,6 +5,7 @@ from app.models.reharmonization_pattern import ReharmonizationPattern
 from app.models.chord_extension import ChordExtension
 from app.models.chord_substitution import ChordSubstitution
 from app.models.melody_upload import MelodyUpload, HarmonizationResult
+from app.models.chord_progression import ChordProgressionPattern
 
 __all__ = [
     "Chord",
@@ -15,4 +16,5 @@ __all__ = [
     "ChordSubstitution",
     "MelodyUpload",
     "HarmonizationResult",
+    "ChordProgressionPattern",
 ]

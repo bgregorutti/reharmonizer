@@ -24,6 +24,7 @@ from app.services.melody_harmonization import (
     MelodyAnalyzer,
     ChordMatcher,
     StylePatterns,
+    EnhancedHarmonizationEngine,
 )
 
 router = APIRouter()
@@ -117,14 +118,14 @@ async def upload_melody(
 @router.post("/harmonize", response_model=HarmonizationResponse)
 def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db)):
     """
-    Generate chord progression for an uploaded melody.
+    Generate chord progression for an uploaded melody using pattern-based harmonization.
 
     Args:
         request: Harmonization request with melody ID and style
         db: Database session
 
     Returns:
-        Harmonization result with chord progression
+        Harmonization result with chord progression and alternatives
     """
     # Get melody upload from database
     melody_upload = (
@@ -139,71 +140,51 @@ def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db
     if not melody_notes:
         raise HTTPException(status_code=400, detail="No melody notes found")
 
-    # Initialize services
-    analyzer = MelodyAnalyzer()
-    chord_matcher = ChordMatcher(db)
-    style_patterns = StylePatterns()
+    # Use enhanced harmonization engine
+    engine = EnhancedHarmonizationEngine(db)
 
-    # Segment melody into phrases
-    phrases = analyzer.segment_into_phrases(melody_notes)
+    # Generate harmonizations (primary + alternatives)
+    harmonizations = engine.harmonize(
+        melody_notes=melody_notes,
+        key_signature=melody_upload.detected_key or "C major",
+        style=request.style,
+        num_alternatives=3,
+    )
 
-    # Generate chord progression
-    chord_progression = []
-    chord_details_list = []
-
-    for phrase in phrases:
-        # Analyze phrase
-        phrase_analysis = analyzer.analyze_phrase(phrase)
-
-        # Find matching chords
-        matching_chords = chord_matcher.find_chords_for_notes(
-            pitch_classes=phrase_analysis["pitch_classes"],
-            key_signature=melody_upload.detected_key or "C major",
-            style=request.style,
-            limit=5,
-        )
-
-        if matching_chords:
-            # Select best chord
-            best_chord = chord_matcher.select_best_chord(matching_chords)
-            if best_chord:
-                chord_progression.append(best_chord["symbol"])
-                chord_details_list.append(
-                    ChordRecommendation(
-                        symbol=best_chord["symbol"],
-                        root_note=best_chord["root_note"],
-                        notes=best_chord["notes"],
-                        chord_quality=best_chord["chord_quality"],
-                        score=best_chord["score"],
-                    )
-                )
-
-    # If no chords found, return error
-    if not chord_progression:
+    if not harmonizations:
         raise HTTPException(
             status_code=400,
             detail="Could not generate chord progression for this melody",
         )
 
-    # Apply style patterns (future enhancement)
-    pattern_result = style_patterns.apply_pattern_to_progression(
-        chord_progression, request.style, melody_upload.detected_key or "C major"
-    )
+    # Use first harmonization as primary
+    primary_harmonization = harmonizations[0]
 
-    # Calculate overall score
-    avg_score = (
-        sum(c.score for c in chord_details_list) / len(chord_details_list)
-        if chord_details_list
-        else 0.5
-    )
+    # Convert chord details to Pydantic models
+    chord_details_list = []
+    for chord_detail in primary_harmonization.get("chord_details", []):
+        chord_details_list.append(
+            ChordRecommendation(
+                symbol=chord_detail.get("symbol", "C"),
+                root_note=chord_detail.get("root_note", "C"),
+                notes=chord_detail.get("notes", ["C", "E", "G"]),
+                chord_quality=chord_detail.get("chord_quality", "major"),
+                score=chord_detail.get("score", 0.5),
+            )
+        )
 
-    # Save harmonization result
+    # Generate alternatives list (just chord symbols)
+    alternatives = []
+    for harm in harmonizations[1:]:
+        alternatives.append(harm.get("chord_progression", []))
+
+    # Save harmonization result to database
     harmonization = HarmonizationResult(
         melody_upload_id=request.melody_upload_id,
         style=request.style,
-        chord_progression=chord_progression,
-        pattern_applied=pattern_result.get("pattern_name"),
-        score=avg_score,
+        chord_progression=primary_harmonization.get("chord_progression", []),
+        pattern_applied=primary_harmonization.get("pattern_name"),
+        score=primary_harmonization.get("score", 0.5),
         options=request.options or {},
     )
 
@@ -216,11 +197,11 @@ def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db
         id=harmonization.id,
         melody_upload_id=request.melody_upload_id,
         style=request.style,
-        chord_progression=chord_progression,
+        chord_progression=primary_harmonization.get("chord_progression", []),
         chord_details=chord_details_list,
-        pattern_applied=pattern_result.get("pattern_name"),
-        score=avg_score,
-        alternatives=None,  # TODO: Generate alternatives
+        pattern_applied=primary_harmonization.get("pattern_name"),
+        score=primary_harmonization.get("score", 0.5),
+        alternatives=alternatives if len(alternatives) > 0 else None,
     )
 
 
