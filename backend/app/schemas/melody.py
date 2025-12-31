@@ -50,6 +50,15 @@ class ChordRecommendation(BaseModel):
     score: float = Field(..., description="Confidence score (0.0 to 1.0)")
 
 
+class ChordTiming(BaseModel):
+    """Schema for chord timing information."""
+
+    symbol: str = Field(..., description="Chord symbol (e.g., 'Cmaj7')")
+    measure: int = Field(..., description="Starting measure number")
+    offset: float = Field(..., description="Starting offset in quarter notes")
+    duration: float = Field(..., description="Duration in quarter notes")
+
+
 class HarmonizationRequest(BaseModel):
     """Request to harmonize a melody."""
 
@@ -74,12 +83,18 @@ class HarmonizationResponse(BaseModel):
     chord_details: List[ChordRecommendation] = Field(
         ..., description="Detailed information for each chord"
     )
+    chord_timing: List[ChordTiming] = Field(
+        ..., description="Timing information for each chord"
+    )
     pattern_applied: Optional[str] = Field(
         None, description="Name of the pattern applied (if any)"
     )
     score: float = Field(..., description="Overall quality score")
     alternatives: Optional[List[List[str]]] = Field(
         None, description="Alternative chord progressions"
+    )
+    alternatives_timing: Optional[List[List[ChordTiming]]] = Field(
+        None, description="Timing information for alternative progressions"
     )
 
 

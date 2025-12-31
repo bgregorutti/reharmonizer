@@ -39,6 +39,13 @@ export interface ChordRecommendation {
   score: number;
 }
 
+export interface ChordTiming {
+  symbol: string;
+  measure: number;
+  offset: number;
+  duration: number;
+}
+
 export interface HarmonizationRequest {
   melody_upload_id: number;
   style: string;
@@ -51,9 +58,11 @@ export interface HarmonizationResponse {
   style: string;
   chord_progression: string[];
   chord_details: ChordRecommendation[];
+  chord_timing: ChordTiming[];
   pattern_applied: string | null;
   score: number;
   alternatives: string[][] | null;
+  alternatives_timing: ChordTiming[][] | null;
 }
 
 export type MusicStyle = 'jazz' | 'pop' | 'classical';

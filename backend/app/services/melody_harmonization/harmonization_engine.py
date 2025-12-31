@@ -168,9 +168,15 @@ class EnhancedHarmonizationEngine:
             if chord_detail:
                 chord_details.append(chord_detail)
 
+        # Calculate timing information for chords
+        chord_timing = self._calculate_chord_timing(
+            chord_progression, change_points, melody_notes
+        )
+
         return {
             "chord_progression": chord_progression,
             "chord_details": chord_details,
+            "chord_timing": chord_timing,
             "pattern_name": selected_pattern.name,
             "pattern_description": selected_pattern.description,
             "score": selected_pattern.popularity_score,
@@ -232,9 +238,15 @@ class EnhancedHarmonizationEngine:
             else 0.5
         )
 
+        # Calculate timing information for chords
+        chord_timing = self._calculate_chord_timing(
+            chord_progression, change_points, melody_notes
+        )
+
         return {
             "chord_progression": chord_progression,
             "chord_details": chord_details,
+            "chord_timing": chord_timing,
             "pattern_name": None,
             "pattern_description": "Direct melody-to-chord matching",
             "score": avg_score,
@@ -340,3 +352,54 @@ class EnhancedHarmonizationEngine:
             segments.append(current_segment)
 
         return segments
+
+    def _calculate_chord_timing(
+        self,
+        chord_progression: List[str],
+        change_points: List[float],
+        melody_notes: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Calculate timing information for each chord in the progression.
+
+        Args:
+            chord_progression: List of chord symbols
+            change_points: List of offsets where chords change
+            melody_notes: Original melody notes for measure lookup
+
+        Returns:
+            List of chord timing dictionaries with symbol, measure, offset, and duration
+        """
+        chord_timings = []
+
+        for i, chord_symbol in enumerate(chord_progression):
+            start_offset = change_points[i]
+
+            # Calculate duration (until next change point or end of melody)
+            if i < len(change_points) - 1:
+                duration = change_points[i + 1] - start_offset
+            else:
+                # Last chord - calculate to end of melody
+                last_note = melody_notes[-1]
+                end_offset = last_note["offset"] + last_note["duration"]
+                duration = end_offset - start_offset
+
+            # Find measure number for this offset
+            measure = None
+            for note in melody_notes:
+                if note["offset"] >= start_offset and not note["is_rest"]:
+                    measure = note["measure"]
+                    break
+
+            # Default to measure 1 if not found
+            if measure is None:
+                measure = 1
+
+            chord_timings.append({
+                "symbol": chord_symbol,
+                "measure": measure,
+                "offset": start_offset,
+                "duration": duration,
+            })
+
+        return chord_timings

@@ -18,6 +18,7 @@ from app.schemas.melody import (
     HarmonizationRequest,
     HarmonizationResponse,
     ChordRecommendation,
+    ChordTiming,
 )
 from app.services.melody_harmonization import (
     MelodyParser,
@@ -173,10 +174,36 @@ def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db
             )
         )
 
-    # Generate alternatives list (just chord symbols)
+    # Convert chord timing to Pydantic models
+    chord_timing_list = []
+    for timing in primary_harmonization.get("chord_timing", []):
+        chord_timing_list.append(
+            ChordTiming(
+                symbol=timing.get("symbol", "C"),
+                measure=timing.get("measure", 1),
+                offset=timing.get("offset", 0.0),
+                duration=timing.get("duration", 4.0),
+            )
+        )
+
+    # Generate alternatives list (just chord symbols) and their timing
     alternatives = []
+    alternatives_timing = []
     for harm in harmonizations[1:]:
         alternatives.append(harm.get("chord_progression", []))
+
+        # Convert timing for this alternative
+        alt_timing = []
+        for timing in harm.get("chord_timing", []):
+            alt_timing.append(
+                ChordTiming(
+                    symbol=timing.get("symbol", "C"),
+                    measure=timing.get("measure", 1),
+                    offset=timing.get("offset", 0.0),
+                    duration=timing.get("duration", 4.0),
+                )
+            )
+        alternatives_timing.append(alt_timing)
 
     # Save harmonization result to database
     harmonization = HarmonizationResult(
@@ -199,9 +226,11 @@ def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db
         style=request.style,
         chord_progression=primary_harmonization.get("chord_progression", []),
         chord_details=chord_details_list,
+        chord_timing=chord_timing_list,
         pattern_applied=primary_harmonization.get("pattern_name"),
         score=primary_harmonization.get("score", 0.5),
         alternatives=alternatives if len(alternatives) > 0 else None,
+        alternatives_timing=alternatives_timing if len(alternatives_timing) > 0 else None,
     )
 
 

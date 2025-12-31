@@ -111,8 +111,13 @@ const ReharmonizerView: React.FC = () => {
         )}
 
         {/* Step 4: Results */}
-        {harmonization && (
-          <HarmonizationResults result={harmonization} />
+        {harmonization && uploadedMelody && (
+          <HarmonizationResults
+            result={harmonization}
+            melodyNotes={uploadedMelody.analysis.notes}
+            timeSignature={uploadedMelody.analysis.time_signature || '4/4'}
+            keySignature={uploadedMelody.analysis.detected_key || 'C'}
+          />
         )}
       </div>
     </div>

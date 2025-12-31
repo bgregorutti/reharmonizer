@@ -1,0 +1,22 @@
+.two-stave-score {
+  margin: 20px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.two-stave-score svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Ensure proper rendering on different screen sizes */
+@media (max-width: 900px) {
+  .two-stave-score {
+    overflow-x: scroll;
+  }
+}

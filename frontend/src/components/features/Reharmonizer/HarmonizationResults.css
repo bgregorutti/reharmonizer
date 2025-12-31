@@ -92,13 +92,65 @@
 }
 
 .alternatives-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .alternatives-section h4 {
   margin: 0 0 1rem 0;
   color: #333;
   font-size: 1.1rem;
+}
+
+.score-section {
+  margin: 30px 0;
+  background: #fafafa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.score-section h4 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.progression-summary {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.progression-summary h4 {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.chord-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chord-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.chord-measure {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: normal;
+  margin-top: 2px;
 }
 
 .alternatives-tabs {
