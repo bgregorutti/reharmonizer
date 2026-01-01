@@ -13,6 +13,7 @@ import music21 as m21
 
 from app.database import get_db
 from app.models.melody_upload import MelodyUpload, HarmonizationResult
+from app.models.key_signature import KeySignature
 from app.schemas.melody import (
     MelodyUploadResponse,
     MelodyAnalysis,
@@ -20,20 +21,47 @@ from app.schemas.melody import (
     HarmonizationRequest,
     HarmonizationResponse,
     ChordRecommendation,
-    ChordTiming,
+    ChordTiming
 )
 from app.services.melody_harmonization import (
     MelodyParser,
     MelodyAnalyzer,
     ChordMatcher,
     StylePatterns,
-    EnhancedHarmonizationEngine,
+    EnhancedHarmonizationEngine
 )
 
 router = APIRouter()
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {".xml", ".musicxml", ".mscz"}
+
+
+def get_quarter_notes_per_measure(time_signature: str) -> float:
+    """
+    Calculate quarter notes per measure from time signature.
+
+    Args:
+        time_signature: Time signature string (e.g., "4/4", "3/4", "6/8")
+
+    Returns:
+        Number of quarter notes per measure
+
+    Examples:
+        "4/4" -> 4.0 (4 quarter notes)
+        "3/4" -> 3.0 (3 quarter notes)
+        "6/8" -> 3.0 (6 eighth notes = 3 quarter notes)
+        "2/2" -> 4.0 (2 half notes = 4 quarter notes)
+    """
+    try:
+        numerator, denominator = map(int, time_signature.split("/"))
+        # Quarter notes per measure = (numerator / denominator) * 4
+        # because 1 whole note = 4 quarter notes
+        return (numerator / denominator) * 4.0
+    except (ValueError, AttributeError, ZeroDivisionError):
+        # Default to 4/4 if parsing fails
+        print(f"Warning: Could not parse time signature '{time_signature}', defaulting to 4.0")
+        return 4.0
 
 
 @router.post("/upload", response_model=MelodyUploadResponse)
@@ -212,6 +240,15 @@ def harmonize_melody(request: HarmonizationRequest, db: Session = Depends(get_db
         melody_upload_id=request.melody_upload_id,
         style=request.style,
         chord_progression=primary_harmonization.get("chord_progression", []),
+        chord_timing=[
+            {
+                "symbol": ct.get("symbol"),
+                "measure": ct.get("measure"),
+                "offset": ct.get("offset"),
+                "duration": ct.get("duration"),
+            }
+            for ct in primary_harmonization.get("chord_timing", [])
+        ],
         pattern_applied=primary_harmonization.get("pattern_name"),
         score=primary_harmonization.get("score", 0.5),
         options=request.options or {},
@@ -296,12 +333,16 @@ def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Harmonization not found")
 
     # Get melody upload
-    melody_upload = (
-        db.query(MelodyUpload).filter_by(id=harmonization.melody_upload_id).first()
-    )
+    melody_upload = db.query(MelodyUpload).filter_by(id=harmonization.melody_upload_id).first()
+
 
     if not melody_upload:
         raise HTTPException(status_code=404, detail="Melody upload not found")
+
+    # Key signature
+    detected_key = melody_upload.detected_key
+    tonic, mode = detected_key.split(" ")
+    key_signature = db.query(KeySignature).filter_by(tonic=tonic, mode=mode).first()
 
     try:
         # Create music21 score
@@ -312,9 +353,16 @@ def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
         score.metadata.title = f"Harmonization - {melody_upload.file_name}"
         score.metadata.composer = "Reharmonizer AI"
 
+        # Key and time signatures
+        score.keySignature = m21.key.KeySignature(key_signature.sharps_flats)
+        score.timeSignature = m21.meter.TimeSignature(melody_upload.time_signature)
+
         # Create parts
         melody_part = m21.stream.Part()
         melody_part.id = "Melody"
+        melody_part.keySignature = m21.key.KeySignature(key_signature.sharps_flats)
+        melody_part.timeSignature = m21.meter.TimeSignature(melody_upload.time_signature)
+
 
         # Add melody notes
         melody_notes = melody_upload.melody_notes or []
@@ -340,21 +388,39 @@ def export_musicxml(harmonization_id: int, db: Session = Depends(get_db)):
                 print(f"Error adding note: {e}")
                 continue
 
-        # Add chord symbols
-        chord_progression = harmonization.chord_progression or []
-        for i, chord_symbol in enumerate(chord_progression):
-            try:
-                # Create harmony object (chord symbol)
-                cs = m21.harmony.ChordSymbol(chord_symbol)
+        # Add chord symbols using timing information
+        chord_timing = harmonization.chord_timing or []
 
-                # Calculate offset based on measure (simplified)
-                # Each measure is 4 quarter notes in 4/4 time
-                cs.offset = i * 4.0
+        if chord_timing:
+            # Use stored timing information
+            for timing in chord_timing:
+                try:
+                    cs = m21.harmony.ChordSymbol(timing.get('symbol', 'C'))
+                    cs.offset = timing.get('offset', 0.0)
+                    # Set duration explicitly
+                    duration_ql = timing.get('duration', 4.0)
+                    if duration_ql > 0:
+                        cs.quarterLength = duration_ql
+                    melody_part.insert(cs.offset, cs)
+                except Exception as e:
+                    print(f"Error adding chord symbol {timing.get('symbol')}: {e}")
+                    continue
+        else:
+            # Fallback to simple progression if no timing stored
+            chord_progression = harmonization.chord_progression or []
+            quarter_notes_per_measure = get_quarter_notes_per_measure(
+                melody_upload.time_signature or "4/4"
+            )
 
-                melody_part.insert(cs.offset, cs)
-            except Exception as e:
-                print(f"Error adding chord symbol {chord_symbol}: {e}")
-                continue
+            for i, chord_symbol in enumerate(chord_progression):
+                try:
+                    cs = m21.harmony.ChordSymbol(chord_symbol)
+                    cs.offset = i * quarter_notes_per_measure
+                    cs.quarterLength = quarter_notes_per_measure
+                    melody_part.insert(cs.offset, cs)
+                except Exception as e:
+                    print(f"Error adding chord symbol {chord_symbol}: {e}")
+                    continue
 
         score.append(melody_part)
 
@@ -444,7 +510,7 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
                 continue
 
         # Add chord symbols using timing information
-        chord_timing = harmonization.chord_timing if hasattr(harmonization, 'chord_timing') else []
+        chord_timing = harmonization.chord_timing or []
 
         if chord_timing:
             # Use chord timing if available
@@ -465,11 +531,16 @@ def export_pdf(harmonization_id: int, db: Session = Depends(get_db)):
         else:
             # Fallback to simple progression
             chord_progression = harmonization.chord_progression or []
+            # Calculate quarter notes per measure based on actual time signature
+            quarter_notes_per_measure = get_quarter_notes_per_measure(
+                melody_upload.time_signature or "4/4"
+            )
+
             for i, chord_symbol in enumerate(chord_progression):
                 try:
                     cs = m21.harmony.ChordSymbol(chord_symbol)
-                    cs.offset = i * 4.0
-                    cs.quarterLength = 4.0  # Default to whole note
+                    cs.offset = i * quarter_notes_per_measure
+                    cs.quarterLength = quarter_notes_per_measure
                     melody_part.insert(cs.offset, cs)
                 except Exception as e:
                     print(f"Error adding chord symbol {chord_symbol}: {e}")

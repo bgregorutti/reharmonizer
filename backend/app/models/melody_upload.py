@@ -48,6 +48,7 @@ class HarmonizationResult(Base):
 
     style = Column(String(20), nullable=False)  # 'jazz', 'pop', 'classical'
     chord_progression = Column(JSON, nullable=False)  # List of chord symbols
+    chord_timing = Column(JSON)  # List of chord timing info (measure, offset, duration, symbol)
 
     # Analysis metadata
     pattern_applied = Column(String(100))  # e.g., "ii-V-I"
